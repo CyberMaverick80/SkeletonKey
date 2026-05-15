@@ -76,3 +76,39 @@ Built on **nRF Connect SDK (NCS)**
 ---
 
 ## 📂 Repository Structure
+skeletonkey/
+│
+├── docs/
+│   ├── 01_product_definition.md
+│   ├── 02_system_architecture.md
+│   ├── 03_security_model.md
+│   ├── 04_cryptographic_flow.md
+│   ├── 05_authentication_state_machine.md
+│   ├── 06_vault_design.md
+│   ├── 07_interface_protocols.md
+│   ├── 08_firmware_architecture.md
+│   ├── 09_hardware_architecture.md
+│   ├── 10_threat_model.md
+│   ├── 11_provisioning_flow.md
+│   └── 12_roadmap.md
+│
+├── firmware/
+│   └── nrf52840/
+│       ├── CMakeLists.txt
+│       ├── prj.conf
+│       └── src/
+│
+├── hardware/
+│   ├── schematics/
+│   ├── pcb/
+│   └── bom/
+│
+├── provisioning/
+│   ├── scripts/
+│   └── atecc_config/
+│
+├── tools/
+│   ├── credential_loader/
+│   └── debug_tools/
+│
+└── README.md
