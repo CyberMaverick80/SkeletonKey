@@ -58,10 +58,22 @@
 
 #include "security/firmware_update.h"
 
+/* =========================================================
+ * AUTHENTICATION SUBSYSTEM
+ * ========================================================= */
+
 #include "security/auth/pin/pin_manager.h"
 #include "security/auth/auth_session.h"
 #include "security/auth/auth_lockout.h"
 #include "security/auth/auth_state_machine.h"
+
+/* =========================================================
+ * SESSION SECURITY ENFORCEMENT
+ * ========================================================= */
+
+#include "security/session/session_guard.h"
+#include "security/session/session_timeout.h"
+#include "security/session/session_validation.h"
 
 /* =========================================================
  * POLICY ENGINE
@@ -99,6 +111,10 @@ static void system_usb_flow(void)
         return;
     }
 
+    if (!session_guard_allow_sensitive_action()) {
+        return;
+    }
+
     LOG_INF("Initializing USB subsystem");
 
     usb_init();
@@ -112,6 +128,10 @@ static void system_key_generation_flow(void)
         return;
     }
 
+    if (!session_guard_allow_sensitive_action()) {
+        return;
+    }
+
     key_id_t key_id =
         key_manager_generate(KEY_TYPE_DEVICE);
 
@@ -121,6 +141,10 @@ static void system_key_generation_flow(void)
 static void system_firmware_flow(void)
 {
     if (!policy_allow_action(POLICY_ACTION_FIRMWARE_UPDATE)) {
+        return;
+    }
+
+    if (!session_guard_allow_sensitive_action()) {
         return;
     }
 
@@ -162,6 +186,8 @@ static bool authenticate_demo_user(void)
             AUTH_STATE_AUTHENTICATED
         );
 
+        session_guard_unlock();
+
         return true;
     }
 
@@ -189,8 +215,11 @@ int main(void)
      * ------------------------------------------------- */
 
     core_init();
+
     security_init();
+
     storage_init();
+
     ui_init();
 
     /* -------------------------------------------------
@@ -230,6 +259,16 @@ int main(void)
     auth_state_machine_init();
 
     /* -------------------------------------------------
+     * Session enforcement systems
+     * ------------------------------------------------- */
+
+    session_guard_init();
+
+    session_validation_init();
+
+    session_timeout_init();
+
+    /* -------------------------------------------------
      * Session system
      * ------------------------------------------------- */
 
@@ -259,9 +298,13 @@ int main(void)
 
         session_start();
 
+        state_set(STATE_UNLOCKED);
+
         secure_ui_show_home();
 
     } else {
+
+        state_set(STATE_LOCKED);
 
         secure_ui_show_locked();
     }
@@ -324,7 +367,22 @@ int main(void)
 
             session_refresh();
 
+            session_timeout_refresh();
+
+            session_timeout_check();
+
             policy_engine_refresh();
+
+            if (!session_validation_is_valid()) {
+
+                LOG_WRN("Session validation failed");
+
+                session_guard_lock();
+
+                state_set(STATE_LOCKED);
+
+                secure_ui_show_locked();
+            }
 
         } else {
 

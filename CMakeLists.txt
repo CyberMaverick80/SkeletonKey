@@ -64,6 +64,16 @@ target_sources(app PRIVATE
 )
 
 # =========================================================
+# Session security enforcement
+# =========================================================
+
+target_sources(app PRIVATE
+    security/session/session_guard.c
+    security/session/session_timeout.c
+    security/session/session_validation.c
+)
+
+# =========================================================
 # PIN authentication subsystem
 # =========================================================
 
